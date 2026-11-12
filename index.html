@@ -169,7 +169,39 @@ textarea{width:100%;font-size:16px;padding:10px;border:3px solid #cfd8d3;border-
   .key{height:70px}
 }
 @media (max-width:700px){.tiles{grid-template-columns:1fr 1fr}.logo h1{font-size:40px}.shgrid{grid-template-columns:1fr 1fr}.ptext{font-size:26px}.eqline{font-size:38px}.opt.eqo{font-size:32px}.tiles2{grid-template-columns:repeat(4,1fr)}}
+
+.slate{margin-top:12px;background:#f7f1e4;border:4px solid #c9b48a;border-radius:20px;padding:12px 16px;box-shadow:inset 0 0 0 2px #efe6d4}
+.slate .slh{font-size:20px;font-weight:800;color:#7a6240;margin-bottom:6px}
+.slate div{font-size:28px;font-weight:800;line-height:1.45;color:#3a3328}
+.eqshow{margin-top:10px;background:#fff8e6;border-radius:16px;padding:8px 14px;font-size:30px;font-weight:800;color:#24675f;text-align:center;border:3px solid #ffe08a}
+.qpart{margin-top:8px;font-size:30px;font-weight:800;color:#5c6b62;padding:4px 8px;border-radius:12px}
+.qpart.on{background:#c9f5ef;color:#1f6f67;box-shadow:0 3px 0 #39d6c8}
+.qpart.done{opacity:.7}
+.midnote{margin-top:10px;font-size:22px;font-weight:800;color:#c4304a;text-align:center}
+.xchips{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:8px 0}
+.xchip{font-family:inherit;font-size:28px;font-weight:800;padding:16px 20px;min-width:132px;border-radius:22px;border:4px solid #bfe3dd;background:#fff;color:#2f3b35;box-shadow:0 6px 0 #bfe3dd;cursor:pointer}
+.xchip.on{background:#fff0c2;border-color:#e0a400;box-shadow:0 6px 0 #e0a400;color:#7a4e00}
+.xchip.no{background:#ffe1e1;border-color:#ef8b8b;box-shadow:0 6px 0 #ef8b8b;opacity:.75}
+.xchip.show{border-color:#ffc23d;box-shadow:0 0 0 4px #ffe59a,0 6px 0 #ffc23d}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+
+/* tighter spacing when a trial would overflow an iPad screen */
+.trial.dense .shrine{padding:12px 16px;margin:2px 0 8px}
+.trial.dense .ptext{font-size:30px;line-height:1.45}
+.trial.dense .slate{margin-top:8px;padding:8px 12px}
+.trial.dense .slate div{font-size:25px;line-height:1.3}
+.trial.dense .fig{margin-top:6px;padding:6px}
+.trial.dense .opt{padding:11px 12px;font-size:28px}
+.trial.dense .opts{gap:8px}
+.trial.dense .pad{gap:8px;margin:6px auto 0}
+.trial.dense .key{height:66px;font-size:36px}
+.trial.dense .stepbox{padding:10px 14px}
+.trial.dense .sq{margin-bottom:8px}
+.trial.dense .hintb{margin-top:8px}
+.trial.dense .hintb .sprite{width:56px;height:56px}
+.trial.dense .hintb .bub{font-size:22px;padding:10px 14px}
+.trial.dense .steps{margin:2px 0 6px}
 
 </style>
 </head>
@@ -178,7 +210,7 @@ textarea{width:100%;font-size:16px;padding:10px;border:3px solid #cfd8d3;border-
 <div id="app"></div>
 <div id="toast"></div>
 <canvas id="fx"></canvas>
-<script src="gen.js?v=1"></script>
+<script src="gen.js?v=2"></script>
 <script>
 (function(){
 /* ===== 林克的解題冒險（應用題）— Brie 遊樂園第 4 個遊戲 ===== */
@@ -366,73 +398,107 @@ function shopView(){var bal=shBal(),h=topbar(true)+'<h2>🛍️ 星星商店</h2
     h+='<div class="shit'+(own?' own':'')+'"><span class="e">'+it.e+'</span><span class="nm">'+it.n+'</span><span class="pr">⭐ '+it.p+'</span>'+b+'</div>'});
   app.innerHTML=h+'</div><button class="btn stone" style="margin-top:16px" data-a="home">🏕️ 回營地看看</button>'}
 /* ---------- 試煉 ---------- */
-var SL={ask:'問什麼',eq:'列算式',calc:'計算',check:'驗算',ans:'寫答案',pick:'找線索'},NUMS='①②③④⑤⑥';
+var SL={ask:'問什麼',eq:'列算式',calc:'計算',check:'驗算',ans:'寫答案',pick:'找線索',extra:'用不到的數',spot:'哪裡錯了',qpick:'選問句',ask2:'再問什麼',eq2:'再列式',calc2:'再計算',ans2:'再寫答案'},NUMS='①②③④⑤⑥⑦⑧';
 function startRound(){var avoid={};for(var k in D.fx)avoid[k]=1;var q=QG.round(D.units,5,avoid);
   q.forEach(function(P){if(P.check&&D.chk===false&&String(P.id).indexOf('chk')!==0){P.check=null;P.steps=P.steps.filter(function(s){return s!=='check'})}});
   G={q:q,i:0,fix:false,first:0,st:0,done:[],fixed:0,better:0};D.seen=(D.seen|0)+1;save();newTrial();go('trial')}
 function startFix(){var ks=fxDue().slice(0,5);if(!ks.length){toast(Object.keys(D.fx).length?'石板今天已經修過了，明天再來喔！':'目前沒有裂開的石板 👍');return}
   G={q:ks.map(function(k){var P=JSON.parse(JSON.stringify(D.fx[k].q));P.key=k;return P}),i:0,fix:true,first:0,st:0,done:[],fixed:0,better:0};
-  G.q.forEach(function(P){if(P.ask)P.ask.opts=shuffle(P.ask.opts);if(P.eq)P.eq.opts=shuffle(P.eq.opts);if(P.ans&&P.ans.opts)P.ans.opts=shuffle(P.ans.opts)});newTrial();go('trial')}
+  G.q.forEach(function(P){if(P.ask)P.ask.opts=shuffle(P.ask.opts);if(P.eq)P.eq.opts=shuffle(P.eq.opts);if(P.ans&&P.ans.opts)P.ans.opts=shuffle(P.ans.opts);
+    if(P.extra)P.extra.opts=shuffle(P.extra.opts);if(P.err)P.err.opts=shuffle(P.err.opts);if(P.qpick)P.qpick.opts=shuffle(P.qpick.opts);
+    if(P.parts)P.parts.forEach(function(x){if(x.ask)x.ask.opts=shuffle(x.ask.opts);if(x.eq)x.eq.opts=shuffle(x.eq.opts);if(x.choice)x.choice.opts=shuffle(x.choice.opts)})});newTrial();go('trial')}
 function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=rnd(i+1),t=a[i];a[i]=a[j];a[j]=t}return a}
-function newTrial(){S={P:G.q[G.i],si:0,tries:0,miss:false,eq:null,val:'',firsts:{},cross:{},checked:false,hint:'',hk:'',okI:{},noI:{},lock:false,scr:false}}
+function newTrial(){S={P:G.q[G.i],si:0,tries:0,miss:false,eq:null,val:'',firsts:{},cross:{},checked:false,hint:'',hk:'',okI:{},noI:{},lock:false,scr:false,xsel:{}}}
 function curStep(){return S.P.steps[S.si]}
+function stepBase(s){return String(s||'').replace(/2$/,'')}
+function storyPart(){return /2$/.test(curStep())?1:0}
+function curProb(){var P=S.P,i,p,o,k;if(P.think==='story'&&P.parts){i=storyPart();p=P.parts[i];o={};for(k in P)o[k]=P[k];for(k in p)if(p[k]!==undefined&&k!=='choice')o[k]=p[k];if(p.choice){o.ans=p.choice;o.ansV=p.ansV}if(i)o.mid=P.parts[0].ans;o.qs=p.qs;o.ansQ=p.ansQ||p.qs;return o}return P}
+function problemHTML(){var P=S.P,s=curStep(),base=stepBase(s),i;
+  if(P.think==='err'&&P.err)return esc(P.ctx)+'<span class="qs hl">'+esc(P.qs)+'</span><div class="slate"><div class="slh">林克的石板</div>'+P.err.lines.map(function(l){return '<div>'+esc(l)+'</div>'}).join('')+'</div>';
+  if(P.think==='qpick')return esc(P.ctx)+(base!=='qpick'?'<span class="qs hl">'+esc(P.qs)+'</span>':'')+(P.canon?'<div class="eqshow">石板上的算式：'+esc(P.canon)+'</div>':'');
+  if(P.think==='story'&&P.parts){i=storyPart();return esc(P.ctx)+'<div class="qpart'+(i===0?' on':' done')+'">第一問：'+esc(P.parts[0].qs)+'</div>'+(i>0?'<div class="midnote">同一塊石板，第二問</div><div class="qpart on">第二問：'+esc(P.parts[1].qs)+'</div>':'')}
+  if(P.kind==='riddle')return esc(P.ctx)+'<ol class="clues">'+P.clues.map(function(c,i){return '<li><b>'+(i+1)+'</b>'+esc(c.t)+'</li>'}).join('')+'</ol><span class="qs'+(S.si>0?' hl':'')+'">'+esc(P.qs)+'</span>';
+  return esc(P.ctx)+'<span class="qs'+(S.si>0||base!=='ask'?' hl':'')+'">'+esc(P.qs)+'</span>'}
 function trialView(){var P=S.P,U=QG.UNITS[P.u]||{},mid='<div class="stam">'+stamina(G.i,G.i,G.q.length)+'試煉 '+(G.i+1)+' / '+G.q.length+'</div>';
   var top='<div class="top"><div class="l"><button class="btn small stone" data-a="quit">✖ 離開</button></div>'+mid+'<div class="r"><div class="pill">⭐ '+(D.stars|0)+'</div></div></div>';
-  var txt=P.kind==='riddle'?esc(P.ctx)+'<ol class="clues">'+P.clues.map(function(c,i){return '<li><b>'+(i+1)+'</b>'+esc(c.t)+'</li>'}).join('')+'</ol><span class="qs'+(S.si>0?' hl':'')+'">'+esc(P.qs)+'</span>'
-    :esc(P.ctx)+'<span class="qs'+(S.si>0||curStep()!=='ask'?' hl':'')+'">'+esc(P.qs)+'</span>';
-  var shrine='<div class="shrine"><div class="glow"></div><button class="spk" data-a="read" aria-label="唸題目">🔊</button><span class="ttag">'+(G.fix?'🪨 修補石板':'⚔️ '+esc(U.r||'')+'的試煉')+'</span><div class="ptext">'+txt+'</div>'+figHTML(P)+'</div>';
+  var shrine='<div class="shrine"><div class="glow"></div><button class="spk" data-a="read" aria-label="唸題目">🔊</button><span class="ttag">'+(G.fix?'🪨 修補石板':'⚔️ '+esc(U.r||'')+'的試煉')+'</span><div class="ptext">'+problemHTML()+'</div>'+figHTML(curProb())+'</div>';
   var chips='<div class="steps">'+P.steps.map(function(s,i){return '<span class="'+(i<S.si?'done':i===S.si?'on':'')+'">'+NUMS[i]+' '+SL[s]+'</span>'}).join('')+'</div>';
-  app.innerHTML=top+'<div class="trial"><div>'+shrine+'</div><div>'+chips+'<div id="sb" class="stepbox">'+stepHTML()+'</div><div id="hint" class="hintb">'+hintHTML()+'</div><div id="scrw">'+(S.scr?scrHTML():'')+'</div></div></div>';
-  if(S.scr)scrInit()}
+  app.innerHTML=top+'<div class="trial"><div>'+shrine+'</div><div>'+chips+'<div id="hint" class="hintb">'+hintHTML()+'</div><div id="sb" class="stepbox">'+stepHTML()+'</div><div id="scrw">'+(S.scr?scrHTML():'')+'</div></div></div>';
+  if(S.scr)scrInit();
+  fitTrial()}
 function hintHTML(){return S.hint?sprite()+'<div class="bub'+(S.hk==='warn'?' warn':'')+'">'+S.hint+'</div>':''}
-function setHint(t,k){S.hint=t;S.hk=k||'';var h=$('#hint');if(h)h.innerHTML=hintHTML()}
+function fitTrial(){var tr=document.querySelector('.trial');if(!tr)return;tr.classList.remove('dense');var need=(document.documentElement.scrollHeight||document.body.scrollHeight)>(window.innerHeight||0)+12;if(need)tr.classList.add('dense')}
+function setHint(t,k){S.hint=t;S.hk=k||'';var h=$('#hint');if(h){h.innerHTML=hintHTML();fitTrial();if(t)setTimeout(function(){try{h.scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}},40)}}
 function padHTML(){var k=['1','2','3','4','5','6','7','8','9','del','0','go'];return '<div class="pad">'+k.map(function(x){return '<button class="key'+(x==='go'?' go':x==='del'?' del':'')+'" data-a="key" data-k="'+x+'">'+(x==='del'?'⌫':x==='go'?'✔':x)+'</button>'}).join('')+'</div>'}
 function ib(){return '<span id="ib" class="inbox blink">'+esc(S.val)+'</span>'}
 function eqWithBox(e){function f(v){return v===null?ib():String(v)}return f(e.x)+' '+(e.op==='+'?'+':QG.MI)+' '+f(e.y)+' = '+f(e.z)}
-function stepHTML(){var P=S.P,s=curStep(),h='';
-  if(s==='ask'){h='<div class="sq">這個試煉要我們找什麼？<small>先讀題目最後一句（有「？」的那一句）</small></div><div class="opts">'+
+function stepHTML(){var P=curProb(),s0=curStep(),s=stepBase(s0),h='';
+  if(s==='ask'){h='<div class="sq">這個試煉要我們找什麼？<small>'+(s0==='ask2'?'這一題問的不一樣喔，先讀第二問':'先讀題目最後一句（有「？」的那一句）')+'</small></div><div class="opts">'+
     P.ask.opts.map(function(o,i){return '<button class="opt'+(S.okI[i]?' ok':S.noI[i]?' no':S.show===i?' show':'')+'" data-a="opt" data-i="'+i+'">'+esc(o.t)+'？</button>'}).join('')+'</div>'}
   else if(s==='eq'){var nOK=P.eq.opts.filter(function(e){return e.ok}).length;
     h='<div class="sq">要用哪一個算式？<small>□ 代表不知道的數'+(nOK>1?'・對的算式不只一個喔，選一個你喜歡的':'')+'</small></div><div class="opts">'+
     P.eq.opts.map(function(e,i){return '<button class="opt eqo'+(S.okI[i]?' ok':S.noI[i]?' no':S.show===i?' show':'')+'" data-a="opt" data-i="'+i+'">'+esc(e.s)+'</button>'}).join('')+'</div>'}
-  else if(s==='calc'){var line=S.eq?eqWithBox(S.eq):esc(P.calc.s).replace('□',ib());
+  else if(s==='calc'){var line=S.eq?eqWithBox(S.eq):(P.calc?esc(P.calc.s).replace('□',ib()):esc((P.canon||'').replace('□','□')).replace('□',ib()));
     h='<div class="sq">算算看，□ 是多少？</div><div class="eqline">'+line+'</div>'+padHTML()+(S.eq?'<div class="tool"><button class="btn small purple" data-a="scr">📝 '+(S.scr?'收起草稿紙':'草稿紙（直式）')+'</button></div>':'')}
   else if(s==='check'){var c=P.check;h='<div class="sq">🔍 驗算：把答案放回去算算看<small>算出來要和題目裡的 '+c.cmp+' 一樣，答案才是對的</small></div><div class="eqline">'+c.x+' '+(c.op==='+'?'+':QG.MI)+' '+c.y+' = '+ib()+'</div>'+padHTML()}
-  else if(s==='ans'){if(P.ans&&P.ans.type==='choice'){h='<div class="ansq">題目問：<b>'+esc(P.qs)+'</b></div><div class="sq">答：（　？　）'+esc(P.ans.post)+'</div><div class="opts" style="grid-template-columns:1fr 1fr">'+
-      P.ans.opts.map(function(o,i){return '<button class="opt'+(S.okI[i]?' ok':S.noI[i]?' no':S.show===i?' show':'')+'" data-a="opt" data-i="'+i+'">'+esc(o.t)+'</button>'}).join('')+'</div>'}
+  else if(s==='ans'){var ch=P.ans&&P.ans.type==='choice'?P.ans:null;
+    if(ch){h='<div class="ansq">題目問：<b>'+esc(P.qs)+'</b></div><div class="sq">答：（　？　）'+esc(ch.post||'')+'</div><div class="opts" style="grid-template-columns:1fr 1fr">'+
+      ch.opts.map(function(o,i){return '<button class="opt'+(S.okI[i]?' ok':S.noI[i]?' no':S.show===i?' show':'')+'" data-a="opt" data-i="'+i+'">'+esc(o.t)+'</button>'}).join('')+'</div>'}
     else h='<div class="ansq">題目問：<b>'+esc(P.ansQ||P.qs)+'</b></div><div class="ansline">'+esc(P.ansPre||'答：')+'（ '+ib()+' ）'+esc(P.unit||'')+'</div>'+padHTML()}
   else if(s==='pick'){h='<div class="sq">哪一個數符合全部的線索？<small>點一下你找到的數</small></div><div class="tiles2">'+P.cand.map(function(m){return '<button class="ntile'+(S.cross[m]?' x':'')+(S.done&&m===P.ans?' ok':'')+'" data-a="tile" data-n="'+m+'">'+m+'</button>'}).join('')+'</div>'}
+  else if(s==='extra'){h='<div class="sq">哪個數字這題用不到？<small>先看最後的問題，再點用不到的數字，點好按「選好了」'+(S.P.extra.need>1?'（這題有 '+S.P.extra.need+' 個）':'')+'</small></div><div class="xchips">'+
+    S.P.extra.opts.map(function(o,i){return '<button class="xchip'+(S.xsel[i]?' on':'')+(S.noI[i]&&!o.ok?' no':'')+(S.show&&o.ok?' show':'')+'" data-a="xchip" data-i="'+i+'">'+esc(o.t)+'</button>'}).join('')+'</div>'+
+    '<div class="tool"><button class="btn" data-a="xgo" style="max-width:320px;margin:12px auto 0">選好了</button></div>'}
+  else if(s==='spot'){h='<div class="sq">林克算錯了嗎？哪裡錯了？<small>先看林克的石板，再選一個</small></div><div class="opts">'+
+    S.P.err.opts.map(function(o,i){return '<button class="opt'+(S.okI[i]?' ok':S.noI[i]?' no':S.show===i?' show':'')+'" data-a="opt" data-i="'+i+'">'+esc(o.t)+'</button>'}).join('')+'</div>'}
+  else if(s==='qpick'){h='<div class="sq">哪一句才是這題要問的？<small>先看石板上的算式和線段圖</small></div><div class="opts">'+
+    S.P.qpick.opts.map(function(o,i){return '<button class="opt'+(S.okI[i]?' ok':S.noI[i]?' no':S.show===i?' show':'')+'" data-a="opt" data-i="'+i+'">'+esc(o.t)+'？</button>'}).join('')+'</div>'}
   return h}
 function stepAgain(){var sb=$('#sb');if(sb)sb.innerHTML=stepHTML()}
-function rec(step,ok){if(S.firsts[step])return;S.firsts[step]=1;var o=D.st[step]||{c:0,w:0};if(ok)o.c++;else o.w++;D.st[step]=o}
+function rec(step,ok){step=stepBase(step);if(S.firsts[step])return;S.firsts[step]=1;var o=D.st[step]||{c:0,w:0};if(ok)o.c++;else o.w++;D.st[step]=o}
 function wrong(step,msgFirst,why){S.tries++;S.miss=true;rec(step,false);sndNo();
   if(S.tries>=2)setHint('💡 '+why,'');else setHint(msgFirst,'warn')}
-function nextStep(delay){S.lock=true;setTimeout(function(){if(view!=='trial'||!S)return;S.lock=false;S.si++;S.tries=0;S.val='';S.okI={};S.noI={};S.show=-1;S.hint='';S.scr=false;
+function nextStep(delay){S.lock=true;setTimeout(function(){if(view!=='trial'||!S)return;S.lock=false;S.si++;S.tries=0;S.val='';S.okI={};S.noI={};S.show=-1;S.hint='';S.scr=false;S.xsel={};
+  if(curStep()==='ask2')S.eq=null;
   if(S.si>=S.P.steps.length){trialDone();return}trialView()},delay||650)}
-function onOpt(i){if(S.lock)return;var P=S.P,s=curStep(),o,ok;
-  if(s==='ask'){o=P.ask.opts[i];ok=o.ok}else if(s==='eq'){o=P.eq.opts[i];ok=o.ok}else if(s==='ans'){o=P.ans.opts[i];ok=o.ok}else return;
-  if(S.noI[i])return;
-  if(ok){rec(s,true);S.okI[i]=1;sndOk();
+function onOpt(i){if(S.lock)return;var P=curProb(),s0=curStep(),s=stepBase(s0),o,ok,opts,why,first;
+  if(s==='ask'){opts=P.ask.opts;o=opts[i];ok=o.ok}else if(s==='eq'){opts=P.eq.opts;o=opts[i];ok=o.ok}
+  else if(s==='ans'){opts=(P.ans&&P.ans.opts)||[];o=opts[i];ok=o&&o.ok}else if(s==='spot'){opts=S.P.err.opts;o=opts[i];ok=o.ok}
+  else if(s==='qpick'){opts=S.P.qpick.opts;o=opts[i];ok=o.ok}else return;
+  if(S.noI[i]||!o)return;
+  if(ok){rec(s0,true);S.okI[i]=1;sndOk();
     if(s==='eq'){S.eq=o;setHint(o.canon?'✨ 對！就用這個算式。':'✨ 這樣想也可以！'+esc(o.s)+' 也是對的算式。','')}
-    else if(s==='ask')setHint('✨ 對！我們要找「'+esc(o.t)+'」。','');else setHint('✨ 答對了！','');
+    else if(s==='ask')setHint('✨ 對！我們要找「'+esc(o.t)+'」。','');
+    else if(s==='qpick'){S.eq=((S.P.eq&&S.P.eq.opts)||[]).filter(function(e){return e.canon})[0]||((S.P.eq&&S.P.eq.opts)||[]).filter(function(e){return e.ok})[0]||null;setHint('✨ 對！這題要問的是「'+esc(o.t)+'」。','')}
+    else if(s==='spot')setHint(S.P.err.kind==='none'?'✨ 對！林克這一題其實都算對了。':'✨ 對！林克是「'+esc(o.t)+'」。','');
+    else setHint('✨ 答對了！','');
     stepAgain();nextStep(s==='eq'?1100:800);return}
-  S.noI[i]=1;var why=s==='ask'?P.why.ask:s==='eq'?P.why.eq:(P.why.ans||'再看一次題目的數字。'),first=s==='ask'?'再讀一次題目最後一句：「'+esc(P.qs)+'」':s==='eq'?'想一想：要找的是合起來的、剩下的，還是相差的？看看線段圖的 ？ 在哪裡。':'再比一比題目裡的數字喔！';
-  wrong(s,first,esc(why));if(S.tries>=3){var cor=(s==='ask'?P.ask.opts:s==='eq'?P.eq.opts:P.ans.opts).map(function(x){return x.ok}).indexOf(true);S.show=cor}stepAgain()}
-function onKey(k){if(S.lock)return;var s=curStep();if(['calc','check','ans'].indexOf(s)<0||(s==='ans'&&S.P.ans&&S.P.ans.type==='choice'))return;
+  S.noI[i]=1;
+  why=s==='ask'?P.why.ask:s==='eq'?P.why.eq:s==='spot'?S.P.why.spot:s==='qpick'?S.P.why.qpick:(P.why.ans||'再看一次題目的數字。');
+  first=s==='ask'?(s0==='ask2'?'這一題問的不一樣喔。再讀一次第二問：「'+esc(P.qs)+'」':'再讀一次題目最後一句：「'+esc(P.qs)+'」'):
+    s==='eq'?'想一想：要找的是合起來的、剩下的，還是相差的？看看線段圖的 ？ 在哪裡。':
+    s==='spot'?'再看看林克的石板，特別注意他最後寫的「答」。':
+    s==='qpick'?'想一想：石板上的算式是合起來，還是拿掉？選跟它一樣意思的問句。':'再比一比題目裡的數字喔！';
+  wrong(s0,first,esc(why));if(S.tries>=3){S.show=opts.map(function(x){return x.ok}).indexOf(true)}stepAgain()}
+function onKey(k){if(S.lock)return;var s=stepBase(curStep()),P=curProb();if(['calc','check','ans'].indexOf(s)<0||(s==='ans'&&P.ans&&P.ans.type==='choice'))return;
   if(k==='del'){S.val=S.val.slice(0,-1);sndTap()}else if(k==='go'){submit();return}else{if(S.val.length>=3)return;S.val=(S.val+k).replace(/^0+(?=\d)/,'');sndTap()}
   var b=$('#ib');if(b){b.textContent=S.val;b.className='inbox'+(S.val?'':' blink')}}
-function submit(){var P=S.P,s=curStep(),v=S.val;if(v===''){toast('先用下面的數字鍵輸入答案喔');return}v=+v;var b=$('#ib');
+function submit(){var P=curProb(),s=stepBase(curStep()),v=S.val;if(v===''){toast('先用下面的數字鍵輸入答案喔');return}v=+v;var b=$('#ib');
   function bad(){if(b){b.classList.remove('no');void b.offsetWidth;b.classList.add('no')}S.val=''; setTimeout(function(){var x=$('#ib');if(x){x.textContent='';x.className='inbox blink'}},450)}
-  if(s==='calc'){var r=S.eq?P.ans:P.calc.r;if(v===r){rec(s,true);sndOk();if(b)b.className='inbox ok';setHint('✨ 算對了！□ = '+r+'。','');nextStep(900);return}
-    bad();var tip=S.eq?(function(){var f=QG.eqEff(S.eq);return (S.eq.z===null?'':'□ 可以這樣算：'+QG.effTxt(f)+'。')+QG.calcTip(f.a,f.op,f.b)})():P.why.calc;
-    wrong(s,'再算一次看看！可以打開草稿紙用直式算。',esc(tip)+(S.tries>=3?'<br>答案是 <b>'+r+'</b>，輸入看看。':''));return}
-  if(s==='check'){var c=P.check;if(v===c.res){rec(s,true);S.checked=true;sndOk();if(b)b.className='inbox ok';setHint('✔ 算出 '+c.res+'，和題目的 '+c.cmp+' 一樣！答案是對的。<br>接下來把<b>題目問的答案</b>寫好。','');nextStep(1700);return}
-    bad();wrong(s,'再算一次：'+c.x+' '+(c.op==='+'?'+':QG.MI)+' '+c.y+' 是多少？',esc(QG.calcTip(c.x,c.op,c.y))+(S.tries>=3?'<br>是 <b>'+c.res+'</b> 喔。':''));return}
-  if(s==='ans'){var kd=QG.ansKind(P,v,S.checked);if(kd==='ok'){rec(s,true);sndOk();if(b)b.className='inbox ok';nextStep(700);return}
+  if(s==='calc'){var r=S.eq?P.ans:(P.calc?P.calc.r:P.ans);if(v===r){rec(curStep(),true);sndOk();if(b)b.className='inbox ok';setHint('✨ 算對了！□ = '+r+'。','');nextStep(900);return}
+    bad();var tip=S.eq?(function(){var f=QG.eqEff(S.eq);return (S.eq.z===null?'':'□ 可以這樣算：'+QG.effTxt(f)+'。')+QG.calcTip(f.a,f.op,f.b)})():(P.why&&P.why.calc)||'再算一次看看。';
+    wrong(curStep(),'再算一次看看！可以打開草稿紙用直式算。',esc(tip)+(S.tries>=3?'<br>答案是 <b>'+r+'</b>，輸入看看。':''));return}
+  if(s==='check'){var c=P.check;if(v===c.res){rec(curStep(),true);S.checked=true;sndOk();if(b)b.className='inbox ok';setHint('✔ 算出 '+c.res+'，和題目的 '+c.cmp+' 一樣！答案是對的。<br>接下來把<b>題目問的答案</b>寫好。','');nextStep(1700);return}
+    bad();wrong(curStep(),'再算一次：'+c.x+' '+(c.op==='+'?'+':QG.MI)+' '+c.y+' 是多少？',esc(QG.calcTip(c.x,c.op,c.y))+(S.tries>=3?'<br>是 <b>'+c.res+'</b> 喔。':''));return}
+  if(s==='ans'){var kd=QG.ansKind(P,v,S.checked);if(kd==='ok'){rec(curStep(),true);sndOk();if(b)b.className='inbox ok';nextStep(700);return}
     bad();if(kd==='check')D.trap=(D.trap|0)+1;if(kd==='given')D.giv=(D.giv|0)+1;
-    S.tries++;S.miss=true;rec(s,false);sndNo();
+    S.tries++;S.miss=true;rec(curStep(),false);sndNo();
     var t=QG.ansHint(P,kd);if(S.tries>=2)t+='<br>💡 上面算出來的答案是 <b>'+P.ans+'</b> 喔！';
-    setHint((kd==='check'||kd==='given'?'🤔 ':'')+esc(t).replace('&lt;br&gt;','<br>').replace(/&lt;(\/?)b&gt;/g,'<$1b>'),S.tries>=2?'':'warn');return}}
+    setHint((kd==='check'||kd==='given'||kd==='mid'||kd==='junk'?'🤔 ':'')+esc(t).replace('&lt;br&gt;','<br>').replace(/&lt;(\/?)b&gt;/g,'<$1b>'),S.tries>=2?'':'warn');return}}
+function onXchip(i){if(S.lock)return;S.xsel[i]=!S.xsel[i];sndTap();stepAgain()}
+function onXgo(){if(S.lock)return;var opts=S.P.extra.opts,ok=opts.every(function(o,i){return !!S.xsel[i]===!!o.ok});
+  if(ok){rec('extra',true);sndOk();setHint('✨ 對！這些數字這題用不到。','');opts.forEach(function(o,i){if(o.ok)S.okI[i]=1});stepAgain();nextStep(900);return}
+  wrong('extra','再看看最後的問題，哪些數字跟它沒有關係？',esc(S.P.why.extra));if(S.tries>=3)S.show=1;stepAgain()}
 function onTile(m){if(S.lock)return;var P=S.P;if(S.cross[m])return;
   if(m===P.ans){rec('pick',true);S.done=true;sndOk();setHint('✨ 找到了！'+m+' 符合全部的線索。','');stepAgain();S.done=false;nextStep(1000);return}
   S.cross[m]=1;var bad=QG.riddleWhy(P,m).map(function(i){return clueWhy(P,P.clues[i],m)});S.tries++;S.miss=true;rec('pick',false);sndNo();
@@ -475,11 +541,11 @@ function resultView(){var p=G.first/G.q.length,us={};G.done.forEach(function(d){
 function pct(o){var n=o?(o.c+o.w):0;return n?Math.round(o.c/n*100):null}
 function parentView(){var h=topbar(true)+'<h2>⚙️ 家長設定</h2><div class="card"><b style="font-size:24px">📚 練習的單元（康軒二上，這次考試範圍 1～5）</b>';
   QG.READY.forEach(function(u){var U=QG.UNITS[u];h+='<label class="set"><input type="checkbox" class="su" data-u="'+u+'"'+(D.units.indexOf(u)>=0?' checked':'')+'>單元 '+u+'　'+U.n+'（'+U.r+'）</label>'});
-  h+='<div style="font-size:17px;color:#6a7a70;margin-top:8px">單元 6～10（兩步驟、乘法應用⋯）之後會加進來。每個試煉都是一步驟的應用題，沒有計時。</div></div>';
+  h+='<div style="font-size:17px;color:#6a7a70;margin-top:8px">單元 6～10（兩步驟、乘法應用⋯）之後會加進來。大部分是熟悉的一步驟應用題，偶爾會出現思考石板：同一則故事兩問、哪個數字用不到、幫林克找錯、選對的問句。沒有計時。</div></div>';
   h+='<div class="card"><b style="font-size:24px">🎛️ 設定</b><label class="set"><input type="checkbox" id="s_sound"'+(D.sound!==false?' checked':'')+'>🎵 音效</label>'+
    '<label class="set"><input type="checkbox" id="s_chk"'+(D.chk!==false?' checked':'')+'>🔍 單元 2、3 也常常加入「驗算」步驟（單元 4 的解題和驗算一定有）</label>'+
    '<div style="font-size:17px;color:#6a7a70;margin-top:8px">每題右上角的 🔊 會用 iPad 內建的中文語音唸題目。</div></div>';
-  var st=D.st||{},rows=[['ask','① 看懂題目問什麼'],['eq','② 選對算式'],['calc','③ 計算'],['check','🔍 驗算'],['ans','✍️ 寫對答案'],['pick','🔎 數字線索']];
+  var st=D.st||{},rows=[['ask','① 看懂題目問什麼'],['eq','② 選對算式'],['calc','③ 計算'],['check','🔍 驗算'],['ans','✍️ 寫對答案'],['pick','🔎 數字線索'],['extra','哪個數字用不到'],['spot','幫林克找錯'],['qpick','選對的問句']];
   h+='<div class="card"><b style="font-size:24px">📈 哪一步最需要練習（第一次就做對的比例）</b>';
   rows.forEach(function(r){var p=pct(st[r[0]]),n=st[r[0]]?st[r[0]].c+st[r[0]].w:0;h+='<div class="srow"><span class="nm">'+r[1]+'</span>'+(n?'<div class="bar"><i style="width:'+p+'%;background:'+(p>=85?'#5cbf4a':p>=60?'#ffc23d':'#ef6b6b')+'"></i></div><span style="width:130px;text-align:right">'+p+'%・'+n+' 次</span>':'<span style="flex:1;color:#8a958e">還沒練過</span>')+'</div>'});
   h+='<div style="font-size:20px;margin-top:8px;line-height:1.6">✍️ 把<b>驗算的結果</b>當成答案：<b>'+(D.trap|0)+'</b> 次（都有提醒她「題目問的是什麼」）<br>✍️ 把<b>題目裡的數</b>直接當答案：<b>'+(D.giv|0)+'</b> 次</div>';
@@ -515,6 +581,8 @@ document.addEventListener('click',function(e){var el=e.target.closest('[data-a]'
     case 'quit':if(confirm('要離開這次冒險嗎？（已經打開的寶箱和星星會留著）')){G=null;S=null;go('home')}break;
     case 'read':speak(QG.speakText(S.P));break;
     case 'opt':onOpt(+el.dataset.i);break;
+    case 'xchip':onXchip(+el.dataset.i);break;
+    case 'xgo':onXgo();break;
     case 'key':onKey(el.dataset.k);break;
     case 'tile':onTile(+el.dataset.n);break;
     case 'scr':S.scr=!S.scr;var w=$('#scrw');if(w){w.innerHTML=S.scr?scrHTML():'';if(S.scr){scrInit();setTimeout(function(){var q=$('#scr');if(q)q.scrollIntoView({block:'nearest',behavior:'smooth'})},50)}}stepAgain();break;
@@ -607,7 +675,7 @@ function sxShow(e){if($('#sxov'))return;var n=$('#nudge');if(n)n.remove();var gc
   try{sndWin();setTimeout(function(){confetti(180)},900)}catch(x){}}
 
 
-window.__q={D:function(){return D},G:function(){return G},S:function(){return S},go:go,startRound:startRound,startFix:startFix,onOpt:onOpt,onKey:onKey,onTile:onTile,submit:submit,load:load,save:save,
+window.__q={D:function(){return D},G:function(){return G},S:function(){return S},go:go,startRound:startRound,startFix:startFix,onOpt:onOpt,onKey:onKey,onTile:onTile,onXchip:onXchip,onXgo:onXgo,submit:submit,load:load,save:save,
   doImport:doImport,exportText:exportText,fxDue:fxDue,x:{ev:sxEval,ck:sxCheck,take:sxTake,sync:sxSync},nextTrial:nextTrial,trialDone:trialDone,setD:function(x){D=x;save()}};
 load();sxSync();
 (document.fonts&&document.fonts.load?document.fonts.load('40px QuestRound','林克0').catch(function(){}):Promise.resolve()).then(function(){render()});

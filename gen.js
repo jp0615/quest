@@ -230,30 +230,263 @@ function riddle(){for(var tr=0;tr<500;tr++){var n=R()<.8?ri(110,195):ri(25,95),l
     P.why={pick:'一條一條檢查：先看第 ① 條，把範圍裡的數排好，再用下一條線索把不對的刪掉。'};P.key='riddle|'+lo+'|'+hi+'|'+cs.map(function(c){return c.k+(c.s||'')}).join(',');return P}
   return null}
 function riddleWhy(P,m){var bad=[];P.clues.forEach(function(c,i){var ok=c.k==='rng'?(m>P.lo&&m<P.hi):clueOK(c,m);if(!ok)bad.push(i)});return bad}
+/* ---------- 思考題型：同一則故事換問題、用不到的數、林克算錯了、選對的問句 ---------- */
+function unusedNum(avoid,lo,hi){lo=lo||2;hi=hi||18;for(var i=0;i<80;i++){var n=ri(lo,hi);if(avoid.indexOf(n)<0){avoid.push(n);return n}}return null}
+function extraBits(avoid){
+  var bits=[],pool=[
+    function(n){return {t:n+' 歲',n:n,s:'林克今年 '+n+' 歲。'}},
+    function(n){return {t:'走了 '+n+' 分鐘',n:n,s:'走到這裡花了 '+n+' 分鐘。'}},
+    function(n){var m=pick(MONS);return {t:n+' 隻'+m,n:n,s:'路上看到 '+n+' 隻'+m+'。'}},
+    function(n){return {t:n+' 朵花',n:n,s:'路邊開了 '+n+' 朵花。'}},
+    function(n){return {t:n+' 步',n:n,s:'離村子還有 '+n+' 步。'}}
+  ];
+  var k=R()<.45?2:1,i,b,n;
+  pool=shuf(pool);
+  for(i=0;i<k && i<pool.length;i++){n=unusedNum(avoid,6,16);if(n==null)break;b=pool[i](n);if(avoid.filter(function(x){return x===n}).length)bits.push(b)}
+  if(!bits.length){n=unusedNum(avoid,6,16);if(n!=null)bits.push({t:n+' 歲',n:n,s:'林克今年 '+n+' 歲。'})}
+  return bits;
+}
+function partOf(P){return {qs:P.qs,ansQ:P.ansQ||P.qs,ans:P.ans,ansV:P.ansV,ansPre:P.ansPre,choice:(P.ans&&P.ans.type==='choice')?P.ans:(P.choice||null),
+  unit:P.unit,ask:P.ask,eq:P.eq,canon:P.canon,eff:P.eff,unk:P.unk,kind:P.kind,lab:P.lab,bar:P.bar===false?null:P.bar,why:P.why,nums:P.nums,v:P.v,calc:P.calc||null}}
+function storySteps(parts){var steps=[],i,p,sfx;
+  for(i=0;i<parts.length;i++){p=parts[i];sfx=i?'2':'';if(p.ask)steps.push('ask'+sfx);if(p.eq)steps.push('eq'+sfx);if(p.eq||p.calc)steps.push('calc'+sfx);steps.push('ans'+sfx)}
+  return steps}
+function packStory(u,id,ctx,parts,opt){
+  opt=opt||{};
+  var P={u:u,id:id,think:'story',kind:parts[0].kind,unk:parts[0].unk,ctx:ctx,parts:parts,steps:storySteps(parts),
+    unit:parts[0].unit||'',v:parts[0].v,bar:parts[0].bar,pic:opt.pic||null,lab:parts[0].lab,
+    ans:parts[parts.length-1].ans,nums:parts[0].nums,qs:parts[0].qs,ansQ:parts[0].qs};
+  P.why={ask:'第一問問「'+parts[0].qs+'」，第二問問「'+parts[1].qs+'」，問句不一樣，要用的算法也不一樣。'};
+  P.key='story|'+u+'|'+id+'|'+parts.map(function(p){return (p.unk||'')+'|'+p.ans}).join('|')+'|'+(parts[0].nums||[]).join(',');
+  return P}
+
+function storyU1(){
+  if(R()<.5){
+    var plus=true,X=ri(110,180),nm=pick(['林克','薩爾達']);
+    var ctx=nm+'在神廟的石板上，看到數字 '+X+'。';
+    var C={v:{},unit:'',ctx:{B:ctx,S:ctx},qs:{B:'比 '+X+' 多 10 的數是多少？',S:'比 '+X+' 少 10 的數是多少？'},
+      q:{B:'比 '+X+' 多 10 的數',S:'比 '+X+' 少 10 的數',d:X+' 和另一個數差多少'}};
+    var P1=build(1,'spm','cmp','B',C,{S:X,d:10,B:X+10},{bar:false});
+    var P2=build(1,'spm','cmp','S',C,{B:X,d:10,S:X-10},{bar:false});
+    P1.ctx=ctx;P2.ctx=ctx;P1.ansPre=P2.ansPre='答：這個數是';
+    P1.ask={opts:shuf([{t:'比 '+X+' 多 10 的數',ok:true},{t:'比 '+X+' 少 10 的數',ok:false},{t:X+' 的十位是幾',ok:false}])};
+    P2.ask={opts:shuf([{t:'比 '+X+' 少 10 的數',ok:true},{t:'比 '+X+' 多 10 的數',ok:false},{t:X+' 的個位是幾',ok:false}])};
+    var P=packStory(1,'spm',ctx,[partOf(P1),partOf(P2)]);P.ansPre='答：這個數是';return P}
+  var a,b;do{a=ri(120,199);b=a+(R()<.5?ri(1,9):-ri(1,9))}while(b===a||b<100||b>200);
+  var nm=names2(),IT=pick([['星星','顆'],['貝殼','個'],['金色葉子','片'],['貼紙','張']]),it=IT[0],cw=IT[1];
+  var ctx=nm[0]+'收集了 '+a+' '+cw+it+'，'+nm[1]+'收集了 '+b+' '+cw+it+'。';
+  var more=a>b?nm[0]:nm[1],less=a>b?nm[1]:nm[0];
+  function who(qmore){var P={kind:'choice',qs:'誰收集的比較'+(qmore?'多':'少')+'？',unit:'',ansV:(qmore?more:less),
+    ask:{opts:shuf([{t:'誰收集的比較'+(qmore?'多':'少'),ok:true},{t:'兩人一共收集了幾'+cw,ok:false},{t:'多幾'+cw,ok:false}])},
+    choice:{type:'choice',opts:shuf([{t:nm[0],ok:(qmore?more:less)===nm[0]},{t:nm[1],ok:(qmore?more:less)===nm[1]}]),post:'收集的比較'+(qmore?'多':'少')},
+    nums:[a,b],unk:qmore?'B':'S',why:{ask:'題目問「誰收集的比較'+(qmore?'多':'少')+'」，先比百位，再比十位。'}};
+    return P}
+  return packStory(1,'swho',ctx,[who(true),who(false)])}
+
+function storyTwo(u,kind){
+  var C,v,ctx,p,lp,cp,nm,it;
+  if(kind==='len'){p=addPair(12,70,120);lp=pick(LPAIR);v={X:lp[0],Y:lp[1],a:p[0],b:p[1],T:p[0]+p[1],B:Math.max(p[0],p[1]),S:Math.min(p[0],p[1]),d:Math.abs(p[0]-p[1])};
+    if(v.d<3){v.B=v.S+4;v.d=4;if(p[0]>=p[1]){p[0]=v.B;p[1]=v.S}else{p[0]=v.S;p[1]=v.B}v.a=p[0];v.b=p[1];v.T=p[0]+p[1]}
+    ctx=lp[0]+'長 '+p[0]+' 公分，'+lp[1]+'長 '+p[1]+' 公分。';
+    var C1={v:{X:lp[0],Y:lp[1]},unit:'公分',ctx:{T:ctx,d:ctx},qs:{T:'兩樣接起來（接的地方不重疊）一共長幾公分？',d:lp[0]+'比'+lp[1]+(p[0]>=p[1]?'長':'短')+'幾公分？'},
+      q:{T:'接起來一共長幾公分',d:lp[0]+'比'+lp[1]+'相差幾公分',a:lp[0]+'長幾公分',b:lp[1]+'長幾公分'},lab:{T:'接起來',a:lp[0],b:lp[1],B:lp[0],S:lp[1],d:'差'}};
+    var P1=build(u,'slen','pw','T',C1,{a:p[0],b:p[1],T:p[0]+p[1]});
+    var long=p[0]>=p[1]?lp[0]:lp[1],short=p[0]>=p[1]?lp[1]:lp[0],Bd=Math.max(p[0],p[1]),Sd=Math.min(p[0],p[1]);
+    var C2={v:{X:long,Y:short},unit:'公分',ctx:{d:ctx},qs:{d:long+'比'+short+'長幾公分？'},q:{d:long+'比'+short+'長幾公分',B:long+'長幾公分',S:short+'長幾公分'},lab:{B:long,S:short,d:'長'}};
+    var P2=build(u,'slen','cmp','d',C2,vCmp(Bd,Sd));
+    P1.ctx=P2.ctx=ctx;return packStory(u,'slen',ctx,[partOf(P1),partOf(P2)])}
+  if(kind==='cup'){cp=pick(CPAIR);var B=ri(6,16),S=ri(2,B-2);var pre=(cp[3]||'')+'用同樣大小的杯子倒水，';
+    ctx=pre+cp[0]+'裝滿可以倒 '+B+' 杯，'+cp[1]+'裝滿可以倒 '+S+' 杯。';
+    var C1={v:{X:cp[0],Y:cp[1]},unit:'杯',ctx:{d:ctx,T:ctx},qs:{d:cp[0]+'比'+cp[1]+'多裝幾杯水？',T:'兩個合起來一共可以倒幾杯？'},
+      q:{d:cp[0]+'比'+cp[1]+'多裝幾杯',T:'合起來一共可以倒幾杯',a:cp[0]+'可以倒幾杯',b:cp[1]+'可以倒幾杯',B:cp[0]+'可以倒幾杯',S:cp[1]+'可以倒幾杯'},lab:{B:cp[0],S:cp[1],d:'多',T:'合起來',a:cp[0],b:cp[1]}};
+    var P1=build(u,'scup','cmp','d',C1,vCmp(B,S),{pic:'cups'});
+    var P2=build(u,'scup','pw','T',C1,{a:B,b:S,T:B+S},{pic:'cups'});
+    P1.ctx=P2.ctx=ctx;return packStory(u,'scup',ctx,[partOf(P1),partOf(P2)],{pic:'cups'})}
+  /* join + 差幾 */
+  if(kind!=='take'){p=addPair(u===1?40:12,u===1?90:80,u===1?180:198);C=ctxPW('join');v={a:p[0],b:p[1],T:p[0]+p[1]};
+    ctx=fill(C.ctx.T,Object.assign({},C.v,v));
+    var P1=build(u,'sjoin','pw','T',C,v);P1.ctx=ctx;
+    var B2=Math.max(p[0],p[1]),S2=Math.min(p[0],p[1]);if(B2===S2)B2=S2+5;
+    var nBig=p[0]>=p[1]?C.v.n:C.v.n2,nS=p[0]>=p[1]?C.v.n2:C.v.n;
+    var C2=ctxCmp();C2.v.n=nBig;C2.v.n2=nS;C2.v.it=C.v.it;C2.v.un=C.v.un;C2.unit=C.unit;
+    var P2=build(u,'sjoin','cmp','d',C2,vCmp(B2,S2));P2.ctx=ctx;
+    return packStory(u,'sjoin',ctx,[partOf(P1),partOf(P2)])}
+  p=subPair(30,99,R()<.4,5);C=R()<.4?ctxMon():ctxPW('take');v=vPW(p[0],p[1]);
+  ctx=fill(C.ctx.b,Object.assign({},C.v,v));
+  var P1=build(u,'stake','pw','b',C,v);P1.ctx=ctx;
+  var take=v.a,left=v.b,Bd=Math.max(take,left),Sd=Math.min(take,left);if(Bd===Sd)return null;
+  var L=P1.lab||{},labA=L.a||'拿走的',labB2=L.b||'剩下的';
+  var labB=take>=left?labA:labB2,labS=take>=left?labB2:labA;
+  var qsd=(take>=left?labA+'比'+labB2+'多幾':labB2+'比'+labA+'多幾')+C.unit+'？';
+  var C2={v:Object.assign({},C.v),unit:C.unit,ctx:{d:ctx},qs:{d:qsd},
+    q:{d:qsd.replace('？',''),B:labB,S:labS},lab:{B:labB,S:labS,d:'多'}};
+  var P2=build(u,'stake','cmp','d',C2,vCmp(Bd,Sd));P2.ctx=ctx;P2.qs=qsd;P2.ansQ=qsd;
+  return packStory(u,'stake',ctx,[partOf(P1),partOf(P2)])}
+
+function thinkStory(u){
+  if(u===1)return storyU1();
+  if(u===3)return storyTwo(3,'len');
+  if(u===5)return storyTwo(5,'cup');
+  return storyTwo(u,R()<.6?'join':'take')}
+
+function thinkExtra(u){
+  var P=null,k=0,id;
+  while(!P&&k<25){k++;P=GEN[u]();if(!P)continue;id=P.id;
+    if(id==='riddle'||id==='pv'||!P.steps||P.steps[0]!=='ask'){P=null;continue}
+    if(P.ans===undefined&&!(P.ans&&P.ans.type==='choice')){P=null;continue}}
+  if(!P)return null;
+  var avoid=(P.nums||[]).concat([P.ans,P.ansV]).map(function(x){return +x}).filter(function(x){return x===x});
+  if(P.v)['T','a','b','B','S','d'].forEach(function(k){if(P.v[k]!=null)avoid.push(+P.v[k])});
+  var bits=extraBits(avoid);if(!bits.length)return null;
+  /* 多餘數字不能剛好等於答案 */
+  if(bits.some(function(b){return b.n===P.ans||b.n===P.ansV}))return null;
+  P=JSON.parse(JSON.stringify(P));
+  P.ctx=bits.map(function(b){return b.s}).join('')+P.ctx;
+  var chips=[],seen={};
+  (P.nums||[]).forEach(function(n){if(n==null||seen[n])return;seen[n]=1;chips.push({t:n+(P.unit?' '+P.unit:''),n:n,ok:false})});
+  if(!chips.length&&P.v){['a','b','T','B','S','d'].forEach(function(k){var n=P.v[k];if(n==null||seen[n])return;seen[n]=1;chips.push({t:n+(P.unit?' '+P.unit:''),n:n,ok:false})})}
+  bits.forEach(function(b){chips.push({t:b.t,n:b.n,ok:true})});
+  if(chips.filter(function(c){return !c.ok}).length<1||chips.filter(function(c){return c.ok}).length<1)return null;
+  /* 插入 extra 步驟：問什麼之後 */
+  var ix=P.steps.indexOf('ask');P.steps=P.steps.slice();P.steps.splice(ix<0?0:ix+1,0,'extra');
+  P.think='extra';P.junk=bits.map(function(b){return b.n});P.extra={opts:shuf(chips),need:bits.length};
+  P.why=P.why||{};P.why.extra='跟最後的問題沒有關係的是：'+bits.map(function(b){return b.t}).join('、')+'。題目問的是「'+P.qs+'」。';
+  P.id='x'+P.id;P.key='extra|'+P.key+'|'+P.junk.join(',');
+  return P}
+
+function wrongCalc(a,op,b,ans){
+  var w;
+  if(op==='-'){w=a-b+10;if(w!==ans&&w>=0&&w<=200)return w;w=a-b-10;if(w!==ans&&w>=0)return w;w=Math.abs((a%10)-(b%10))+Math.floor(a/10)*10-Math.floor(b/10)*10;if(w!==ans&&w>=0)return w}
+  else{w=a+b-10;if(w!==ans&&w>=0)return w;w=a+b+10;if(w!==ans&&w<=200)return w;var oa=a%10,ob=b%10;if(oa+ob>=10){w=a+b-10;if(w!==ans&&w>=0)return w}}
+  w=ans+1;return w===ans?ans+2:w}
+
+function thinkErr(u){
+  var wantCheck=u!==1 && R()<((u===4)?.7:.45);
+  var P=null,k=0,id;
+  while(!P&&k<30){k++;P=u<=3?GEN[u](u===2||u===3?wantCheck:undefined):GEN[u]();
+    if(!P)continue;id=P.id;
+    if(id==='riddle'||id==='pv'||(P.ans&&P.ans.type==='choice'&&u!==1)){P=null;continue}
+    if(wantCheck&&!P.check){P=null;continue}
+    if(typeof P.ans!=='number'){P=null;continue}}
+  if(!P)return null;
+  P=JSON.parse(JSON.stringify(P));
+  var kinds;
+  if(u===1)kinds=['given','given','calc','op'];
+  else if(P.check&&P.check.res!==P.ans)kinds=wantCheck||R()<.55?['checkans','checkans','checkans','op','given','calc']:['checkans','op','given','calc','none'];
+  else kinds=['op','given','calc','none'];
+  var ek=pick(kinds);
+  if(ek==='checkans'&&(!P.check||P.check.res===P.ans))ek='given';
+  var unit=P.unit||'',ansU=(unit?(' '+unit):''),lines,opts,why,linkAns,eff=P.eff,canon=P.canon,wa;
+  if(ek==='checkans'){
+    var c=P.check;linkAns=c.res;
+    lines=[canon.replace('□',String(P.ans)),'驗算：'+c.x+' '+(c.op==='+'?'+':MI)+' '+c.y+' = '+c.res,'答：'+c.res+ansU];
+    opts=[{t:'算式列錯了',ok:false,k:'eq'},{t:'算式對，可是算錯了',ok:false,k:'calc'},{t:'把驗算的結果當成答案了',ok:true,k:'checkans'},{t:'其實都沒有錯',ok:false,k:'ok'}];
+    why='林克前面都算對了，也驗算對了。可是題目問的是「'+P.qs+'」，答案應該是 '+P.ans+ansU+'，不是驗算算出來的 '+c.res+'。'}
+  else if(ek==='op'&&eff){
+    wa=eff.op==='+'?eff.a-eff.b:eff.a+eff.b;if(wa<0||wa>200||wa===P.ans){ek='given'}
+    if(ek==='op'){var wop=eff.op==='+'?'−':'+';linkAns=wa;
+      lines=[eff.a+' '+wop+' '+eff.b+' = '+wa,'答：'+wa+ansU];
+      opts=[{t:'算式列錯了',ok:true,k:'eq'},{t:'算式對，可是算錯了',ok:false,k:'calc'},{t:'把題目裡本來就有的數當成答案了',ok:false,k:'given'},{t:'其實都沒有錯',ok:false,k:'ok'}];
+      why='題目問的是「'+P.qs+'」，要用'+(eff.op==='+'?'加法':'減法')+'：'+effTxt(eff)+' = '+P.ans+'。林克用反了。'}}
+  if(ek==='calc'&&eff){
+    wa=wrongCalc(eff.a,eff.op,eff.b,P.ans);linkAns=wa;
+    lines=[eff.a+' '+(eff.op==='+'?'+':MI)+' '+eff.b+' = '+wa,'答：'+wa+ansU];
+    opts=[{t:'算式列錯了',ok:false,k:'eq'},{t:'算式對，可是算錯了',ok:true,k:'calc'},{t:'把題目裡本來就有的數當成答案了',ok:false,k:'given'},{t:'其實都沒有錯',ok:false,k:'ok'}];
+    why='算式 '+effTxt(eff)+' 是對的，可是林克算成 '+wa+' 了。再算一次，□ 是 '+P.ans+'。'}
+  if(ek==='given'){
+    var g=(P.nums||[]).filter(function(n){return n!==P.ans})[0];if(g==null)return null;linkAns=g;
+    lines=[(canon?canon.replace('□','？')+'，':'')+'答：'+g+ansU];
+    opts=[{t:'算式列錯了',ok:false,k:'eq'},{t:'把題目裡本來就有的數當成答案了',ok:true,k:'given'},{t:'其實都沒有錯',ok:false,k:'ok'}];
+    why='這個數是題目裡本來就有的。題目問的是「'+P.qs+'」，答案是 '+P.ans+ansU+'。'}
+  if(ek==='none'){
+    linkAns=P.ans;
+    lines=[canon?canon.replace('□',String(P.ans)):'',P.check?'驗算：'+P.check.x+' '+(P.check.op==='+'?'+':MI)+' '+P.check.y+' = '+P.check.res:'','答：'+P.ans+ansU].filter(Boolean);
+    opts=[{t:'算式列錯了',ok:false,k:'eq'},{t:'算式對，可是算錯了',ok:false,k:'calc'},{t:'把驗算的結果當成答案了',ok:false,k:'checkans'},{t:'其實都沒有錯',ok:true,k:'ok'}];
+    why='林克的算式、計算和答案都是對的。答案就是 '+P.ans+ansU+'。'}
+  if(!opts)return null;
+  P.think='err';P.err={kind:ek,lines:lines,opts:shuf(opts),linkAns:linkAns};
+  P.steps=['spot','ans'];P.why=P.why||{};P.why.spot=why;
+  P.why.ans=(ek==='checkans')?'題目問的是「'+P.qs+'」，答案是林克一開始算出來的 '+P.ans+'，不是驗算的結果。':'題目問的是「'+P.qs+'」，答案是 '+P.ans+(ansU)+'。';
+  P.id='e'+P.id;P.key='err|'+ek+'|'+P.key;
+  /* 讓寫答案時能辨認林克的錯答（驗算結果／題目裡的數／算錯的數） */
+  if(ek==='checkans')P._linkKind='check';
+  else if(ek==='given')P._linkKind='given';
+  else if(ek==='op'||ek==='calc')P._linkKind='link';
+  P.linkAns=linkAns;
+  return P}
+
+function thinkQpick(u){
+  var P=null,k=0,right,wrongs;
+  while(!P&&k<30){k++;P=GEN[u]();
+    if(!P||P.id==='riddle'||P.id==='pv'||P.id==='cupwho'||P.id==='big'||!P.eq||!P.ask||typeof P.ans!=='number'){P=null;continue}
+    right=(P.ask.opts.filter(function(o){return o.ok})[0]||{}).t||P.qs.replace(/？$/,'');
+    wrongs=P.ask.opts.filter(function(o){return !o.ok}).map(function(o){return o.t});
+    if(!right||wrongs.length<2){P=null;continue}
+    if(numsIn(right).indexOf(P.ans)>=0){P=null;continue}}
+  if(!P)return null;
+  P=JSON.parse(JSON.stringify(P));
+  right=(P.ask.opts.filter(function(o){return o.ok})[0]||{}).t||P.qs.replace(/？$/,'');
+  wrongs=P.ask.opts.filter(function(o){return !o.ok}).map(function(o){return o.t});
+  P.think='qpick';P.hideQs=true;P.showEq=true;
+  P.qpick={opts:shuf([{t:right,ok:true}].concat(wrongs.slice(0,2).map(function(s){return {t:s,ok:false}})))};
+  var st=P.steps.slice().filter(function(s){return s!=='ask'&&s!=='eq'&&s!=='check'});
+  st.unshift('qpick');if(st[st.length-1]!=='ans')st.push('ans');
+  P.steps=st;P.why=P.why||{};
+  P.why.qpick='石板上的算式是「'+P.canon+'」。問句的意思要跟這個算式一樣。正確的問句是「'+right+'？」。';
+  P.id='q'+P.id;P.key='qpick|'+P.key;
+  return P}
+function numsIn(s){return (String(s).match(/\d+/g)||[]).map(Number)}
+
+function thinkMake(u,typ){var p=null,k=0,fn={story:thinkStory,extra:thinkExtra,err:thinkErr,qpick:thinkQpick}[typ];
+  if(!fn||!GEN[u])return null;while(!p&&k<12){try{p=fn(u)}catch(e){p=null}k++}return p?tidy(p):null}
+
+
 /* ---------- 對外 ---------- */
 var GEN={1:u1,2:function(){return u2(R()<.25)},3:function(){return u3(R()<.25)},4:u4,5:u5};
 function sp(s){return typeof s==='string'?s.replace(/([A-Za-z])([\u4e00-\u9fff])/g,'$1 $2').replace(/([\u4e00-\u9fff])([A-Za-z])/g,'$1 $2'):s}
-function tidy(p){['ctx','qs','ansQ'].forEach(function(k){p[k]=sp(p[k])});if(p.ask)p.ask.opts.forEach(function(o){o.t=sp(o.t)});if(p.ans&&p.ans.opts)p.ans.opts.forEach(function(o){o.t=sp(o.t)});
-  p.ansQ=p.ansQ||p.qs;if(p.ansV)p.ansV=sp(p.ansV);if(p.why)for(var k in p.why)p.why[k]=sp(p.why[k]);if(p.lab)for(var j in p.lab)p.lab[j]=sp(p.lab[j]);return p}
+function tidyOne(p){['ctx','qs','ansQ'].forEach(function(k){if(p[k])p[k]=sp(p[k])});if(p.ask)p.ask.opts.forEach(function(o){o.t=sp(o.t)});if(p.choice)p.choice.opts.forEach(function(o){o.t=sp(o.t)});if(p.ans&&p.ans.opts)p.ans.opts.forEach(function(o){o.t=sp(o.t)});
+  p.ansQ=p.ansQ||p.qs;if(p.ansV)p.ansV=sp(p.ansV);if(p.why)for(var k in p.why)p.why[k]=sp(p.why[k]);if(p.lab)for(var j in p.lab)p.lab[j]=sp(p.lab[j]);
+  if(p.extra)p.extra.opts.forEach(function(o){o.t=sp(o.t)});if(p.err){p.err.lines=p.err.lines.map(sp);p.err.opts.forEach(function(o){o.t=sp(o.t)})}if(p.qpick)p.qpick.opts.forEach(function(o){o.t=sp(o.t)});return p}
+function tidy(p){tidyOne(p);if(p.parts)p.parts.forEach(tidyOne);return p}
 function make(u){var p=null,k=0;while(!p&&k<20){p=GEN[u]();k++}return tidy(p)}
 function round(units,n,avoid){units=(units||READY).filter(function(u){return GEN[u]});if(!units.length)units=READY;var out=[],seen={},bag=[],k=0;avoid=avoid||{};
   while(out.length<n&&k<200){k++;if(!bag.length)bag=shuf(units);var u=bag.pop(),p=make(u);if(!p||seen[p.key]||avoid[p.key])continue;
     var sameId=out.filter(function(x){return x.id===p.id}).length;if(sameId>=2&&k<150)continue;seen[p.key]=1;out.push(p)}
+  /* 每 5 題混入 1～2 題思考題，多數仍是熟悉的一步驟試煉 */
+  var thinkN=n>=5?(R()<.5?1:2):(n>=3?1:0),types=shuf(['story','extra','err','qpick']),used={},i,j,tp,typ,idx,tried;
+  var order=shuf(out.map(function(_,i){return i}));
+  for(j=0;j<thinkN&&j<order.length;j++){idx=order[j];tried=0;tp=null;
+    while(!tp&&tried<16){typ=types[tried%types.length];if(used[typ]&&tried<types.length){tried++;continue}
+      tp=thinkMake(out[idx].u,typ);if(tp&&(seen[tp.key]||avoid[tp.key]))tp=null;tried++}
+    if(tp){used[tp.think]=1;seen[tp.key]=1;out[idx]=tp}}
   return out}
 /* 答案檢查：回傳 'ok' | 'check'（填成驗算的結果） | 'given'（填成題目裡的數） | 'op'（用錯加減） | 'no' */
-function ansKind(P,v,checked){v=+v;if(P.ans===undefined)return 'no';if(v===P.ans)return 'ok';
+function ansKind(P,v,checked){v=+v;if(typeof P.ans!=='number')return 'no';if(v===P.ans)return 'ok';
   if(checked&&P.check&&v===P.check.res)return 'check';
+  if(P.mid!=null&&v===P.mid)return 'mid';
+  if((P.junk||[]).indexOf(v)>=0)return 'junk';
+  if(P.linkAns!=null&&v===P.linkAns&&P.err&&P.err.kind==='checkans')return 'check';
+  if(P.linkAns!=null&&v===P.linkAns&&P.err&&P.err.kind==='given')return 'given';
   if((P.nums||[]).indexOf(v)>=0)return 'given';
   if(P.eff){var w=P.eff.op==='+'?P.eff.a-P.eff.b:P.eff.a+P.eff.b;if(v===w)return 'op'}
   return 'no'}
-function ansHint(P,kind){var q='「'+P.ansQ+'」';
+function ansHint(P,kind){var q='「'+(P.ansQ||P.qs)+'」';
   if(kind==='check')return '這是驗算的結果喔！驗算只是用來檢查的。題目問的是'+q+'，答案是你一開始算出來的那個數。';
   if(kind==='given')return '這個數是題目裡本來就有的喔！題目問的是'+q+'？';
   if(kind==='op')return '想一想：要用加法還是減法？題目問的是'+q+'。';
+  if(kind==='mid')return '這是上一題的答案喔！這一題問的不一樣：'+q+'。';
+  if(kind==='junk')return '這個數字這題用不到喔！題目問的是'+q+'。';
   return '再看一次上面算出來的數，題目問的是'+q+'。'}
-function speakText(P){var t=P.ctx+(P.clues?P.clues.map(function(c,i){return '第'+(i+1)+'條，'+c.t+'。'}).join(''):'')+P.qs;
+function speakText(P){var t=P.ctx||'';
+  if(P.think==='story'&&P.parts)t+='第一問，'+P.parts[0].qs+'第二問，'+P.parts[1].qs;
+  else if(P.clues)t+=P.clues.map(function(c,i){return '第'+(i+1)+'條，'+c.t+'。'}).join('')+(P.qs||'');
+  else if(P.think==='qpick')t+='石板上的算式是：'+(P.canon||'').replace('□','多少')+'。請選出正確的問句。';
+  else t+=P.qs||'';
+  if(P.think==='err'&&P.err)t+='林克的石板寫著：'+P.err.lines.join('，')+'。請找出林克哪裡錯了。';
+  if(P.think==='extra')t+='有的數字這題用不到，要仔細看。';
   return t.replace(/□/g,'多少').replace(/−/g,'減').replace(/\+/g,'加').replace(/Brie/g,'布莉')}
-var api={setRand:setRand,UNITS:UNITS,READY:READY,make:make,round:round,eqTrue:eqTrue,eqStr:eqStr,eqEff:eqEff,allForms:allForms,ansKind:ansKind,ansHint:ansHint,
-  calcTip:calcTip,effTxt:effTxt,riddleWhy:riddleWhy,clueOK:clueOK,speakText:speakText,GEN:GEN,MI:MI,BOX:BOX,_u:{build:build,ctxBuy:ctxBuy,ctxCmp:ctxCmp,ctxPW:ctxPW,ctxMon:ctxMon,tidy:tidy,u1:u1,u2:u2,u3:u3,u4:u4,u5:u5,riddle:riddle}};
+var THINK=['story','extra','err','qpick'];
+var api={setRand:setRand,UNITS:UNITS,READY:READY,THINK:THINK,make:make,thinkMake:thinkMake,round:round,eqTrue:eqTrue,eqStr:eqStr,eqEff:eqEff,allForms:allForms,ansKind:ansKind,ansHint:ansHint,
+  calcTip:calcTip,effTxt:effTxt,riddleWhy:riddleWhy,clueOK:clueOK,speakText:speakText,GEN:GEN,MI:MI,BOX:BOX,_u:{build:build,ctxBuy:ctxBuy,ctxCmp:ctxCmp,ctxPW:ctxPW,ctxMon:ctxMon,tidy:tidy,u1:u1,u2:u2,u3:u3,u4:u4,u5:u5,riddle:riddle,thinkStory:thinkStory,thinkExtra:thinkExtra,thinkErr:thinkErr,thinkQpick:thinkQpick,packStory:packStory,partOf:partOf}};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.QG=api;
 })(this);
